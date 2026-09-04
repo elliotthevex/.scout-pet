@@ -1,0 +1,10 @@
+# Compiled binary — build from ScoutPetApp.swift instead
+ScoutPet
+ScoutPet.new
+*.dSYM/
+
+# Runtime state — regenerated at launch, not source
+events.json
+sessions.json
+status.json
+scout.log

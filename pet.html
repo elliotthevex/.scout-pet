@@ -1,0 +1,324 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  :root{
+    --screen:#241C17;
+    --pixel:#F6ECD9;
+    --glow:#FFB07C;
+    --glow-soft:#FFD9B8;
+    --bot-shadow:#D98552;
+  }
+  html, body{
+    margin:0; padding:0;
+    width:100%; height:100%;
+    background:transparent;
+    overflow:hidden;
+  }
+  *{ box-sizing:border-box; }
+
+  .stage{
+    position:relative;
+    width:150px; height:165px;
+  }
+
+  .pet-wrap{
+    position:absolute; left:50%; top:30px; transform:translateX(-50%);
+    width:112px; height:112px;
+    animation: breathe 2.8s ease-in-out infinite;
+  }
+  .pet-wrap.sitting{ animation:none; transform:translateX(-50%); }
+  @keyframes breathe{
+    0%,100%{ transform:translateX(-50%) translateY(0); }
+    50%{ transform:translateX(-50%) translateY(-5px); }
+  }
+  .pet-wrap.walking-left{ animation: walkLeft 2.4s ease-in-out; }
+  .pet-wrap.walking-right{ animation: walkRight 2.4s ease-in-out; }
+  @keyframes walkLeft{
+    0%{ transform:translateX(-50%) translateY(0) rotate(0); }
+    25%{ transform:translateX(calc(-50% - 20px)) translateY(-3px) rotate(-4deg); }
+    50%{ transform:translateX(calc(-50% - 20px)) translateY(0) rotate(-2deg); }
+    75%{ transform:translateX(-50%) translateY(-3px) rotate(2deg); }
+    100%{ transform:translateX(-50%) translateY(0) rotate(0); }
+  }
+  @keyframes walkRight{
+    0%{ transform:translateX(-50%) translateY(0) rotate(0); }
+    25%{ transform:translateX(calc(-50% + 20px)) translateY(-3px) rotate(4deg); }
+    50%{ transform:translateX(calc(-50% + 20px)) translateY(0) rotate(2deg); }
+    75%{ transform:translateX(-50%) translateY(-3px) rotate(-2deg); }
+    100%{ transform:translateX(-50%) translateY(0) rotate(0); }
+  }
+  .pet-wrap.petted svg{ animation: squish .5s ease-out; }
+  .pet-wrap.celebrating{ animation: hop .9s ease-in-out; }
+  @keyframes squish{
+    0%{ transform:scale(1,1); } 30%{ transform:scale(1.14,.82); } 60%{ transform:scale(.92,1.1); } 100%{ transform:scale(1,1); }
+  }
+  @keyframes hop{
+    0%{ transform:translateX(-50%) translateY(0) rotate(0); }
+    20%{ transform:translateX(-50%) translateY(-24px) rotate(-8deg); }
+    40%{ transform:translateX(-50%) translateY(0) rotate(6deg); }
+    55%{ transform:translateX(-50%) translateY(-12px) rotate(-4deg); }
+    72%{ transform:translateX(-50%) translateY(0) rotate(2deg); }
+    100%{ transform:translateX(-50%) translateY(0) rotate(0); }
+  }
+
+  .cursor{ animation: caretBlink 1.05s steps(1) infinite; }
+  @keyframes caretBlink{ 0%,49%{ opacity:1; } 50%,100%{ opacity:0; } }
+
+  .led{ animation: ledPulse 3.2s ease-in-out infinite; }
+  .celebrating .led{ animation-duration:.5s; }
+  @keyframes ledPulse{ 0%,100%{ opacity:.5; } 50%{ opacity:1; } }
+
+  .face-alt{ display:none; }
+  svg.show-heart .face-default{ display:none; }
+  svg.show-heart .face-heart{ display:block; }
+  svg.show-check .face-default{ display:none; }
+  svg.show-check .face-check{ display:block; }
+
+  .arm{ transform-box: fill-box; transform-origin: center; transition: transform .3s ease-out; }
+  .pet-wrap.petted .arm-l, .pet-wrap.celebrating .arm-l{ transform: rotate(-34deg); }
+  .pet-wrap.petted .arm-r, .pet-wrap.celebrating .arm-r{ transform: rotate(34deg); }
+
+  .desk-scene, .typing-arm{ display:none; }
+  .pet-wrap.sitting .arm, .pet-wrap.sitting .leg, .pet-wrap.sitting .torso-screen{ display:none; }
+  .pet-wrap.sitting .desk-scene, .pet-wrap.sitting .typing-arm{ display:block; }
+  .typing-arm{ transform-box: fill-box; transform-origin: center; animation: typeBob .28s ease-in-out infinite; }
+  .typing-arm-r{ animation-delay:.14s; }
+  @keyframes typeBob{ 0%,100%{ transform:translateY(0); } 50%{ transform:translateY(-2.5px); } }
+
+  svg{ cursor: pointer; filter: drop-shadow(0 10px 14px rgba(30,15,8,.35)); -webkit-user-select:none; user-select:none; }
+
+  .particles{ position:absolute; inset:0; pointer-events:none; overflow:visible; }
+  .fx{ position:absolute; font-size:18px; animation: rise .9s ease-out forwards; }
+  @keyframes rise{
+    0%{ transform:translateY(0) scale(.6); opacity:0; }
+    15%{ opacity:1; transform:translateY(-6px) scale(1); }
+    100%{ transform:translateY(-64px) scale(1); opacity:0; }
+  }
+  .confetti{
+    position:absolute; top:26px;
+    width:7px; height:10px; border-radius:1px;
+    animation: confettiFall 1.1s ease-in forwards;
+  }
+  @keyframes confettiFall{
+    0%{ transform: translateY(0) rotate(0deg); opacity:1; }
+    100%{ transform: translateY(150px) rotate(340deg); opacity:0; }
+  }
+
+  .speech{
+    position:absolute; top:14px; left:50%; transform:translateX(-50%) scale(.6);
+    background:var(--pixel); color:var(--screen);
+    font-family:-apple-system, 'SF Pro Text', sans-serif; font-weight:600; font-size:12px;
+    padding:4px 10px; border-radius:10px; opacity:0; white-space:nowrap; z-index:6;
+    transition:opacity .18s, transform .18s;
+    box-shadow: 0 4px 10px rgba(30,15,8,.3);
+    max-width:190px; overflow:hidden; text-overflow:ellipsis;
+  }
+  .speech::after{
+    content:""; position:absolute; left:50%; bottom:-5px; transform:translateX(-50%);
+    border:5px solid transparent; border-top-color:var(--pixel);
+  }
+  .speech.show{ opacity:1; transform:translateX(-50%) scale(1); }
+
+  @media (prefers-reduced-motion: reduce){
+    .pet-wrap{ animation:none; }
+    .pet-wrap.walking-left,.pet-wrap.walking-right,.pet-wrap.celebrating{ animation:none; }
+    .pet-wrap.petted svg{ animation:none; }
+    .cursor{ animation:none; opacity:1; }
+    .led{ animation:none; }
+    .typing-arm{ animation-duration:.01s; }
+  }
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="pet-wrap" id="petWrap">
+    <svg id="petSvg" viewBox="0 0 200 200" width="112" height="112" aria-hidden="true">
+      <g class="core">
+        <ellipse cx="100" cy="196" rx="44" ry="7" fill="#000" opacity=".16"></ellipse>
+
+        <rect class="leg leg-l" x="80" y="182" width="15" height="19" rx="7" fill="var(--bot-shadow)"></rect>
+        <rect class="leg leg-r" x="105" y="182" width="15" height="19" rx="7" fill="var(--bot-shadow)"></rect>
+
+        <rect class="arm arm-l" x="44" y="150" width="16" height="34" rx="8" fill="var(--glow)" transform="rotate(-10 52 167)"></rect>
+        <rect class="arm arm-r" x="140" y="150" width="16" height="34" rx="8" fill="var(--glow)" transform="rotate(10 148 167)"></rect>
+
+        <rect x="70" y="146" width="60" height="42" rx="19" fill="var(--glow)"></rect>
+        <rect x="70" y="146" width="60" height="18" rx="16" fill="var(--glow-soft)" opacity=".55"></rect>
+        <g class="torso-screen">
+          <rect x="84" y="158" width="32" height="18" rx="5" fill="var(--screen)"></rect>
+          <path d="M90,163 L96,167 L90,171" fill="none" stroke="var(--pixel)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path>
+          <rect x="100" y="169" width="8" height="2.4" rx="1" fill="var(--pixel)"></rect>
+        </g>
+
+        <circle cx="76" cy="52" r="27" fill="var(--glow)"></circle>
+        <circle cx="124" cy="52" r="27" fill="var(--glow)"></circle>
+        <rect x="43" y="50" width="114" height="98" rx="44" fill="var(--glow)"></rect>
+        <rect x="43" y="50" width="114" height="44" rx="40" fill="var(--glow-soft)" opacity=".5"></rect>
+
+        <circle class="led" cx="134" cy="35" r="4.5" fill="var(--pixel)"></circle>
+
+        <rect x="64" y="86" width="72" height="50" rx="13" fill="var(--screen)"></rect>
+        <rect x="64" y="86" width="72" height="50" rx="13" fill="none" stroke="#00000022" stroke-width="1.5"></rect>
+
+        <g class="face-default">
+          <path d="M78,102 L92,111 L78,120" fill="none" stroke="var(--pixel)" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"></path>
+          <rect class="cursor" x="100" y="115" width="16" height="6" rx="1.5" fill="var(--pixel)"></rect>
+        </g>
+        <g class="face-heart face-alt">
+          <path d="M100,120 C88,108 72,116 74,128 C76,140 92,148 100,154 C108,148 124,140 126,128 C128,116 112,108 100,120 Z" fill="var(--pixel)"></path>
+        </g>
+        <g class="face-check face-alt">
+          <path d="M76,111 L92,127 L124,97" fill="none" stroke="var(--pixel)" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"></path>
+        </g>
+      </g>
+
+      <g class="desk-scene">
+        <rect x="112" y="176" width="78" height="6" rx="3" fill="var(--bot-shadow)"></rect>
+        <rect x="116" y="182" width="5" height="4" fill="var(--bot-shadow)"></rect>
+        <rect x="181" y="182" width="5" height="4" fill="var(--bot-shadow)"></rect>
+        <rect x="128" y="152" width="46" height="9" rx="2" fill="var(--bot-shadow)"></rect>
+        <rect x="132" y="112" width="38" height="42" rx="5" fill="var(--screen)"></rect>
+        <rect x="132" y="112" width="38" height="42" rx="5" fill="none" stroke="#00000022" stroke-width="1.5"></rect>
+        <path d="M141,127 L148,133 L141,139" fill="none" stroke="var(--pixel)" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"></path>
+        <rect x="151" y="136" width="9" height="2.6" rx="1" fill="var(--pixel)"></rect>
+      </g>
+      <rect class="typing-arm typing-arm-l" x="120" y="146" width="13" height="12" rx="6" fill="var(--glow)"></rect>
+      <rect class="typing-arm typing-arm-r" x="136" y="146" width="13" height="12" rx="6" fill="var(--glow)"></rect>
+    </svg>
+    <div class="speech" id="speech"></div>
+    <div class="particles" id="particles"></div>
+  </div>
+</div>
+
+<script>
+(function(){
+  var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  var petWrap = document.getElementById('petWrap');
+  var petSvg = document.getElementById('petSvg');
+  var speech = document.getElementById('speech');
+  var particles = document.getElementById('particles');
+
+  var CONFETTI_COLORS = ['#F0895C','#E7B95C','#F6ECD9','#FFB07C'];
+  var knownIds = null;
+
+  var speechTimer = null;
+  function say(text, ms){
+    clearTimeout(speechTimer);
+    speech.textContent = text;
+    speech.classList.add('show');
+    speechTimer = setTimeout(function(){ speech.classList.remove('show'); }, ms || 1400);
+  }
+
+  function bump(el, cls, ms){
+    el.classList.remove(cls);
+    void el.offsetWidth;
+    el.classList.add(cls);
+    setTimeout(function(){ el.classList.remove(cls); }, ms);
+  }
+
+  function showFace(cls, ms){
+    petSvg.classList.remove('show-heart','show-check');
+    void petSvg.offsetWidth;
+    petSvg.classList.add(cls);
+    setTimeout(function(){ petSvg.classList.remove(cls); }, ms);
+  }
+
+  function spawnFx(symbol){
+    var el = document.createElement('div');
+    el.className = 'fx';
+    el.textContent = symbol;
+    el.style.left = (58 + Math.random()*34) + '%';
+    el.style.bottom = '82px';
+    particles.appendChild(el);
+    setTimeout(function(){ el.remove(); }, reduceMotion ? 50 : 950);
+  }
+
+  function spawnConfetti(){
+    for(var i=0;i<9;i++){
+      (function(i){
+        var el = document.createElement('div');
+        el.className = 'confetti';
+        el.style.left = (14 + Math.random()*72) + '%';
+        el.style.background = CONFETTI_COLORS[i % CONFETTI_COLORS.length];
+        el.style.animationDelay = (Math.random()*0.15) + 's';
+        el.style.transform = 'rotate(' + Math.floor(Math.random()*90) + 'deg)';
+        particles.appendChild(el);
+        setTimeout(function(){ el.remove(); }, reduceMotion ? 60 : 1300);
+      })(i);
+    }
+  }
+
+  function doPet(){
+    bump(petWrap, 'petted', 520);
+    showFace('show-heart', 700);
+    spawnFx('♥');
+    say(pickPhrase(['hi!','still watching','on it']));
+  }
+  function pickPhrase(list){ return list[Math.floor(Math.random()*list.length)]; }
+
+  petSvg.addEventListener('click', doPet);
+
+  if(!reduceMotion){
+    (function wanderLoop(){
+      var delay = 7000 + Math.random()*7000;
+      setTimeout(function(){
+        if(!petWrap.classList.contains('celebrating') && !petWrap.classList.contains('sitting')){
+          petWrap.classList.remove('walking-left','walking-right');
+          void petWrap.offsetWidth;
+          petWrap.classList.add(Math.random() < 0.5 ? 'walking-left' : 'walking-right');
+          setTimeout(function(){ petWrap.classList.remove('walking-left','walking-right'); }, 2450);
+        }
+        wanderLoop();
+      }, delay);
+    })();
+  }
+
+  var coreGroup = document.querySelector('.core');
+  function applyStatus(state){
+    var sitting = state === 'working';
+    if(sitting){
+      petWrap.classList.remove('walking-left','walking-right');
+      petWrap.classList.add('sitting');
+      if(coreGroup) coreGroup.setAttribute('transform', 'translate(-24,4)');
+    } else {
+      petWrap.classList.remove('sitting');
+      if(coreGroup) coreGroup.removeAttribute('transform');
+    }
+  }
+
+  function celebrate(title){
+    bump(petWrap, 'celebrating', 900);
+    showFace('show-check', 1400);
+    spawnConfetti();
+    spawnFx('✦');
+    say(title ? ('✓ ' + title) : 'done!', 2400);
+  }
+
+  function handleEvents(list){
+    if(!Array.isArray(list)) return;
+    var ids = list.map(function(e){ return e && e.id; });
+    if(knownIds === null){
+      var seed = {};
+      ids.forEach(function(id){ seed[id] = true; });
+      knownIds = seed;
+      return;
+    }
+    var newOnes = list.filter(function(e){ return e && !knownIds[e.id]; });
+    var seen = {};
+    ids.forEach(function(id){ seen[id] = true; });
+    knownIds = seen;
+    if(newOnes.length){
+      var latest = newOnes[newOnes.length - 1];
+      celebrate(latest && latest.title);
+    }
+  }
+
+  window.scoutSetStatus = function(state){ applyStatus(state); };
+  window.scoutSetEvents = function(list){ handleEvents(list); };
+})();
+</script>
+</body>
+</html>
